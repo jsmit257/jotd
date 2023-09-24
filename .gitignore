@@ -1,0 +1,4 @@
+**/*.class
+jotd.sqlite
+lib/*
+lib/jotd.jar

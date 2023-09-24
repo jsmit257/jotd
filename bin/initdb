@@ -1,0 +1,22 @@
+#!/bin/sh
+
+db=jotd.sqlite
+cmd=(sqlite3 -echo -json "$db")
+
+rm -fv "$db"
+
+"${cmd[@]}" <<-EOF
+create table jokes(
+  id   integer       not null primary key autoincrement,
+  day  date          not null unique,
+  text varchar(1024) not null,
+  desc varchar(1024) null
+);
+insert into jokes(day, text, desc)
+values (
+  '2023-09-23',
+  'horse walks into a bar; bartender says why the long face?',
+  null
+);
+select * from jokes;
+EOF

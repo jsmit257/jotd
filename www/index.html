@@ -1,0 +1,84 @@
+<html>
+
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script defer type=text/javascript>
+  $('.controls>.control')
+    .onClick(() => {});
+  </script>
+
+  <style>
+    .main {
+      margin-left: auto;
+      margin-right: auto;
+      width: 80%;
+    }
+
+    .jotd {}
+
+    .jotd .id {
+      display: none;
+    }
+
+    .jotd .day {
+      display: none;
+    }
+
+    .jotd .new-day {}
+
+    .jotd .text {
+      height: 10em;
+      width: 30em;
+    }
+
+    .jotd .desc {
+      height: 10em;
+      width: 30em;
+    }
+
+    .jotd>.calendar {
+      background-color: blue;
+      float: left;
+      height: 200px;
+      width: 30%;
+    }
+
+    .controls>.control {
+      float: left;
+      position: relative;
+      width: 30%;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div id="main" class="main">
+    <form name="jotd" class="jotd">
+      <div class="calendar"></div>
+      <div class="line-item">
+        <input name="id" class="id">
+      </div>
+      <div class="line-item">
+        <input name="day" class="day">
+      </div>
+      <div class="line-item">
+        <input name="old-day" class="day">
+      </div>
+      <div class="line-item">
+        <input name="text" class="text">
+      </div>
+      <div class="line-item">
+        <input name="description" class="desc">
+      </div>
+    </form>
+    <div class="controls">
+      <div class="control edit" id="patch">edit</div>
+      <div class="control delete" id="delete">delete</div>
+      <div class="control add" id="post">new</div>
+    </div>
+    <div class="status"></div>
+  </div>
+</body>
+
+</html>
