@@ -1,10 +1,12 @@
+JAVA_LIBS=lib/javaee-api-8.0.jar:lib/json-20230618.jar:lib/postgresql-42.6.0.jar:lib/slf4j-api-2.0.7.jar:lib/slf4j-simple-2.0.7.jar:lib/sqlite-jdbc-3.43.0.0.jar
+
 .PHONY: initdb
 initdb:
-	./bin/initdb
+	./bin/init-sqlite
 
 .PHONY: build
 build:
-	javac -Xlint:deprecation -cp "com/:lib/json-20230618.jar:lib/sqlite-jdbc-3.43.0.0.jar:lib/postgresql-42.6.0.jar:lib/javaee-api-8.0.jar:lib/slf4j-api-2.0.7.jar" `find . -name '*.java'`
+	javac -Xlint:deprecation -cp $(JAVA_LIBS) `find . -name '*.java'`
 
 .PHONY: unit
 unit: build
@@ -15,11 +17,22 @@ package: build
 
 .PHONY: run-local
 run-local: package initdb
-	java -cp lib/jotd.jar:lib/javaee-api-8.0.jar:lib/json-20230618.jar:lib/slf4j-api-2.0.7.jar:lib/slf4j-simple-2.0.7.jar:lib/sqlite-jdbc-3.43.0.0.jar com.jotd.cmd.JOTD
+	JOTD_CONFIG=local_standalone SERVER_HOST=localhost SERVER_PORT=8080 java -cp lib/jotd.jar:$(JAVA_LIBS) com.jotd.cmd.JOTD
 
 .PHONY: deploy
 deploy:
 
 .PHONY: run-docker
-run-docker:
+run-docker: docker-down package
+	docker-compose -f docker-compose.yml up postgres &
+	echo "give postgres a few seconds to start" >&2
+	sleep 10
+	docker-compose -f docker-compose.yml up test-serve-jotd
 
+.PHONY: tests
+tests:
+	./bin/tests
+
+.PHONY: docker-down
+docker-down:
+	docker-compose -f docker-compose.yml down

@@ -1,2 +1,46 @@
-x-version: 0.01
+---
+version: "3.1"
 
+x-postgres-host: &postgres-host jotd-db
+x-postgres-img: &postgres-img postgres:16.0
+x-postgres-port: &postgres-port 5432
+x-postgres-pwd: &postgres-pwd root
+x-postgres-user: &postgres-user postgres
+x-api-host: &server-host jotd-api
+
+services:
+
+  postgres:
+    image: *postgres-img
+    restart: always
+    hostname: *postgres-host
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: *postgres-pwd
+
+  schema:
+    depends_on: [ postgres ]
+    image: *postgres-img
+    volumes: [ ./bin:/sql-bin ]
+    environment:
+      PGHOST: *postgres-host
+      PGPASSWORD: *postgres-pwd
+      PGPORT: *postgres-port
+      PGUSER: *postgres-user
+    working_dir: /sql-bin
+    command: ./init-postgres
+
+  test-serve-jotd:
+    depends_on: [ schema ]
+    image: eclipse-temurin:latest
+    restart: no
+    hostname: *server-host
+    volumes: [ ./lib:/jotd ]
+    ports:
+      - 8080:8080
+    environment:
+      JOTD_CONFIG: local_docker
+      SERVER_HOST: *server-host
+      SERVER_PORT: 8080
+    command: /opt/java/openjdk/bin/java -cp /jotd/* com.jotd.cmd.JOTD

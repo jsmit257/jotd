@@ -1,0 +1,38 @@
+#!/bin/sh
+
+db=jotd
+
+# # sleep causes the script to terminate, pausing in the makefile instead
+# for i in `seq 0 20`; do
+#   echo "starting an iteration $i"
+#   if psql -h"$PGHOST" -p"$PGPORT" -U"$PGUSER" -c '\q'; then 
+#     break
+#   fi
+#   echo "failed a connection, retrying $i"
+#   sleep 1s
+# done;
+
+psql -h"$PGHOST" -p"$PGPORT" -U"$PGUSER" >&2 <<-EOF
+
+drop database if exists jotd with force;
+
+create database jotd;
+
+\c jotd
+
+create table jokes(
+  id          serial        not null primary key,
+  day         date          not null unique,
+  text        varchar(1024) not null,
+  description varchar(1024) null
+);
+insert into jokes(day, text, description)
+values (
+  '2023-09-23',
+  'horse walks into a bar; bartender says why the long face?',
+  null
+);
+EOF
+
+psql -h"$PGHOST" -p"$PGPORT" -U"$PGUSER" -d"$db" -c "select * from jokes"
+

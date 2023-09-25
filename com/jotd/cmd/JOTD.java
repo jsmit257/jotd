@@ -13,22 +13,28 @@ import com.jotd.http.Server;
 
 public class JOTD {
 
-  private static final String APP_LOCALE = "jotd_locale";
+  private static final String APP_LOCALE = "JOTD_CONFIG";
+  private static final String SERVER_HOST = "SERVER_HOST";
+  private static final String SERVER_PORT = "SERVER_PORT";
 
   public static void main(String[] args) {
 
     Logger log = LoggerFactory.getLogger(JOTD.class);
 
     String appLocale = System.getenv(JOTD.APP_LOCALE);
+    String hostname = System.getenv(JOTD.SERVER_HOST);
+    String port = System.getenv(JOTD.SERVER_PORT);
+    if (appLocale == null) {
+      appLocale = "";
+    }
 
     ResourceBundle p = ResourceBundle.getBundle(
         "jotd",
-        new Locale.Builder().setRegion(appLocale).build(),
+        Locale.of(appLocale),
         JOTD.class.getClassLoader());
 
-    log.info("successfully loaded resource bundle: '{}'", p);
+    log.info("successfully loaded resource bundle: '{}'", p.getLocale());
 
-    // TODO: configure the database
     Conn conn;
     try {
       conn = new Conn(p.getString("jdbc.url"), log);
@@ -42,7 +48,8 @@ public class JOTD {
     try {
       new Server(
           p.getString("app.name"),
-          Integer.parseInt(p.getString("http.port")),
+          hostname,
+          Integer.parseInt(port),
           conn,
           log);
     } catch (NumberFormatException | IOException e) {

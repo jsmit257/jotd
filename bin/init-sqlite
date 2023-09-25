@@ -1,0 +1,27 @@
+#!/bin/sh
+
+db=jotd.sqlite
+cmd=(sqlite3 -echo -json "$db")
+
+if [ -z "$NO_CLOBBER_DB" ]; then
+  rm -fv "$db"
+
+  "${cmd[@]}" <<-EOF
+  create table jokes(
+    id          integer       not null primary key autoincrement,
+    day         date          not null unique,
+    text        varchar(1024) not null,
+    description varchar(1024) null
+  );
+  insert into jokes(day, text, description)
+  values (
+    1695448800000,
+    'horse walks into a bar; bartender says why the long face?',
+    null
+  );
+EOF
+
+fi >&2
+
+sqlite3 -json "$db" "select * from jokes" | jq .
+

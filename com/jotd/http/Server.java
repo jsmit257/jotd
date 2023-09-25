@@ -17,12 +17,12 @@ public class Server {
   private Server() {
   }
 
-  public Server(String ctxRoot, int port, Conn conn, Logger log) throws IOException {
+  public Server(String ctxRoot, String hostname, int port, Conn conn, Logger log) throws IOException {
     this();
     this.log = log;
     ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
 
-    HttpServer srv = HttpServer.create(new InetSocketAddress("localhost", port), 0);
+    HttpServer srv = HttpServer.create(new InetSocketAddress(hostname, port), 0);
     srv.createContext("/" + ctxRoot, new JokeHandler(conn.getJokes(), this.log));
     srv.setExecutor(threadPoolExecutor);
     srv.start();

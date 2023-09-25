@@ -43,7 +43,7 @@ public class JokeHandler implements HttpHandler {
   }
 
   @Override
-  public void handle(HttpExchange xchg) throws IOException {
+  public void handle(HttpExchange xchg) {
 
     int sc = HttpURLConnection.HTTP_OK;
     Map<String, Object> result = new HashMap<String, Object>();
@@ -52,7 +52,12 @@ public class JokeHandler implements HttpHandler {
         .lines()
         .collect(Collectors.joining("\n"));
 
-    JSONObject reqData = new JSONObject(reqText);
+    JSONObject reqData;
+    try {
+      reqData = new JSONObject(reqText);
+    } catch (JSONException e) {
+      return;
+    }
 
     try {
       switch (xchg.getRequestMethod().toLowerCase()) {
@@ -93,20 +98,31 @@ public class JokeHandler implements HttpHandler {
       sc = 404;
     }
 
-    byte[] b = new byte[] {};
+    int contentLength = -1;
+    byte[] b = null;
 
     if (sc != HttpURLConnection.HTTP_NO_CONTENT) {
       b = JSONObject.valueToString(result).getBytes();
+      contentLength = b.length;
     }
 
-    xchg.sendResponseHeaders(sc, b.length);
-
     OutputStream response = xchg.getResponseBody();
-    response.write(b);
-    response.flush();
-    response.close();
+    try {
+      xchg.sendResponseHeaders(sc, contentLength);
 
-    log.info("successfully completed JokeHandler::handle");
+      response.write(b);
+      response.flush();
+    } catch (IOException e) {
+      log.error("an error occurred writing the results", e);
+    } finally {
+      try {
+        response.close();
+      } catch (Exception e) {
+        log.error("an error occurred closing the response body", e);
+      }
+    }
+
+    log.info("successfully completed JokeHandler::handle with status code {}", sc);
 
   }
 
@@ -135,7 +151,7 @@ public class JokeHandler implements HttpHandler {
     Joke joke;
 
     try {
-      joke = jokes.createJoke(JokeHandler.createJoke(data));
+      joke = jokes.createJoke(JokeHandler.dataToJoke(data));
     } catch (SQLException e) {
       throw new InternalErrorException("couldn't create joke", e);
     } catch (DuplicateKeyException e) {
@@ -166,7 +182,7 @@ public class JokeHandler implements HttpHandler {
     }
 
     try {
-      joke = jokes.updateJoke(originalDay, JokeHandler.createJoke(data));
+      joke = jokes.updateJoke(originalDay, JokeHandler.dataToJoke(data));
     } catch (SQLException e) {
       throw new InternalErrorException("couldn't update joke", e);
     } catch (DuplicateKeyException e) {
@@ -204,7 +220,7 @@ public class JokeHandler implements HttpHandler {
     };
   }
 
-  private static Joke createJoke(JSONObject data) throws BadRequestException {
+  private static Joke dataToJoke(JSONObject data) throws BadRequestException {
     Date day = JokeHandler.getDay(data);
     String text, desc = "";
     try {

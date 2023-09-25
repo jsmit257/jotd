@@ -15,31 +15,31 @@ import com.jotd.types.Joke;
 
 class Jokes implements IJokes {
 
-  private Logger log;
   private Connection connection;
+  private Logger log;
 
   private Jokes() {
   }
 
   public Jokes(Connection connection, Logger log) {
     this();
-    this.log = log;
     this.connection = connection;
-    this.log.info("successfully initialized jokes");
+    this.log = log;
+    log.info("successfully initialized jokes");
   }
 
   @Override
   public Joke createJoke(Joke j) throws SQLException, DuplicateKeyException {
     try {
       if (readJoke(j.getDay()) != null) {
-        throw new DuplicateKeyException("a joke exists for day: '" + j.getDay() + "'");
+        throw new DuplicateKeyException(String.format("a joke exists for day: '%s'", j.getDay()));
       }
     } catch (NotFoundException e) {
       log.debug("no joke for day '{}'", j.getDay());
     }
 
-    PreparedStatement ps = connection.prepareStatement("insert into jokes (day, text, desc) values (?, ?, ?)");
-    ps.setString(1, j.getDay().toString());
+    PreparedStatement ps = connection.prepareStatement("insert into jokes (day, text, description) values (?, ?, ?)");
+    ps.setDate(1, j.getDay());
     ps.setString(2, j.getText());
     if (j.getDesc() == null || j.getDesc().isBlank()) {
       ps.setNull(3, Types.VARCHAR);
@@ -55,21 +55,29 @@ class Jokes implements IJokes {
 
   @Override
   public Joke readJoke(Date d) throws SQLException, NotFoundException {
-    PreparedStatement ps = connection.prepareStatement("select id, text, desc from jokes where day = ?");
-    ps.setString(1, d.toString());
+    Joke result;
+
+    PreparedStatement ps = connection.prepareStatement("select id, text, description from jokes where day = ?");
+    ps.setDate(1, d);
 
     ResultSet rs = ps.executeQuery();
-    if (!rs.next()) {
-      throw new NotFoundException("not found for day: '" + d + "'");
+    try {
+      if (!rs.next()) {
+        throw new NotFoundException(String.format("not found for day: '%s'", d));
+      }
+
+      result = new Joke(
+          rs.getInt("id"),
+          d,
+          rs.getString("text"),
+          rs.getString("description"));
+    } finally {
+      try {
+        rs.close();
+      } catch (Exception e) {
+        log.error("failed to close result set", e);
+      }
     }
-
-    Joke result = new Joke(
-        rs.getInt("id"),
-        d,
-        rs.getString("text"),
-        rs.getString("desc"));
-
-    rs.close();
 
     return result;
   }
@@ -86,8 +94,9 @@ class Jokes implements IJokes {
       }
     }
     Joke oldJoke = readJoke(d);
-    PreparedStatement ps = connection.prepareStatement("update jokes set day = ?, text = ?, desc = ? where id = ?");
-    ps.setString(1, j.getDay().toString());
+    PreparedStatement ps = connection
+        .prepareStatement("update jokes set day = ?, text = ?, description = ? where id = ?");
+    ps.setDate(1, j.getDay());
     ps.setString(2, j.getText());
     if (j.getDesc() == null || j.getDesc().isBlank()) {
       ps.setNull(3, Types.VARCHAR);
@@ -109,7 +118,7 @@ class Jokes implements IJokes {
     PreparedStatement ps = connection.prepareStatement("delete from jokes where id = ?");
     ps.setLong(1, oldJoke.getId());
     if (ps.executeUpdate() != 1) {
-      throw new RuntimeException("row could not be deleted: '" + oldJoke + "'");
+      throw new RuntimeException(String.format("row could not be deleted: '%s'", oldJoke));
     }
     return oldJoke;
   }
