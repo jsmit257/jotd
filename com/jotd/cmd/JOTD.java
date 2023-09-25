@@ -17,6 +17,13 @@ public class JOTD {
   private static final String SERVER_HOST = "SERVER_HOST";
   private static final String SERVER_PORT = "SERVER_PORT";
 
+  /**
+   * leaving this one comment to mention that i'd normally javadoc everything
+   * public and most other things as well, but given the expendable nature of this
+   * project, it seems lot of work just to show that it should be done
+   * 
+   * @param args unused
+   */
   public static void main(String[] args) {
 
     Logger log = LoggerFactory.getLogger(JOTD.class);

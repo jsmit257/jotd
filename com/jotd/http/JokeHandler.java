@@ -142,7 +142,9 @@ public class JokeHandler implements HttpHandler {
         put("id", joke.getId());
         put("day", joke.getDay());
         put("text", joke.getText());
-        put("desc", joke.getDesc());
+        if (joke.getDesc() != null) {
+          put("desc", joke.getDesc());
+        }
       }
     };
   }
@@ -163,7 +165,9 @@ public class JokeHandler implements HttpHandler {
         put("id", joke.getId());
         put("day", joke.getDay());
         put("text", joke.getText());
-        put("desc", joke.getDesc());
+        if (joke.getDesc() != null) {
+          put("desc", joke.getDesc());
+        }
       }
     };
   }
@@ -194,7 +198,9 @@ public class JokeHandler implements HttpHandler {
         put("id", joke.getId());
         put("day", joke.getDay());
         put("text", joke.getText());
-        put("desc", joke.getDesc());
+        if (joke.getDesc() != null) {
+          put("desc", joke.getDesc());
+        }
       }
     };
   }
@@ -215,7 +221,9 @@ public class JokeHandler implements HttpHandler {
         put("id", joke.getId());
         put("day", joke.getDay());
         put("text", joke.getText());
-        put("desc", joke.getDesc());
+        if (joke.getDesc() != null) {
+          put("desc", joke.getDesc());
+        }
       }
     };
   }
@@ -224,7 +232,7 @@ public class JokeHandler implements HttpHandler {
     Date day = JokeHandler.getDay(data);
     String text, desc = "";
     try {
-      desc = data.getString("description");
+      desc = data.getString("desc");
     } catch (JSONException e) {
       // desc is optional, so ignore this
     }
