@@ -81,6 +81,7 @@ public class JokeHandler implements HttpHandler {
           break;
         case "fail":
           result.put("error", String.format("couldn't parse json data '%s'", reqText));
+          sc = HttpURLConnection.HTTP_BAD_REQUEST;
           break;
         default:
           result.put("error", "invalid method");
@@ -144,16 +145,7 @@ public class JokeHandler implements HttpHandler {
       throw new InternalErrorException("couldn't fetch joke", e);
     }
 
-    return new HashMap<String, Object>() {
-      {
-        put("id", joke.getId());
-        put("day", joke.getDay());
-        put("text", joke.getText());
-        if (joke.getDesc() != null) {
-          put("desc", joke.getDesc());
-        }
-      }
-    };
+    return joke.toMap();
   }
 
   public Map<String, Object> postJoke(JSONObject data) throws InternalErrorException, BadRequestException {
@@ -167,16 +159,7 @@ public class JokeHandler implements HttpHandler {
       throw new BadRequestException("a joke already exists for this day", e);
     }
 
-    return new HashMap<String, Object>() {
-      {
-        put("id", joke.getId());
-        put("day", joke.getDay());
-        put("text", joke.getText());
-        if (joke.getDesc() != null) {
-          put("desc", joke.getDesc());
-        }
-      }
-    };
+    return joke.toMap();
   }
 
   public Map<String, Object> patchJoke(JSONObject data)
@@ -200,16 +183,7 @@ public class JokeHandler implements HttpHandler {
       throw new BadRequestException("a joke already exists for the requested day", e);
     }
 
-    return new HashMap<String, Object>() {
-      {
-        put("id", joke.getId());
-        put("day", joke.getDay());
-        put("text", joke.getText());
-        if (joke.getDesc() != null) {
-          put("desc", joke.getDesc());
-        }
-      }
-    };
+    return joke.toMap();
   }
 
   public Map<String, Object> deleteJoke(JSONObject data)
@@ -223,16 +197,7 @@ public class JokeHandler implements HttpHandler {
       throw new InternalErrorException("couldn't delete joke", e);
     }
 
-    return new HashMap<String, Object>() {
-      {
-        put("id", joke.getId());
-        put("day", joke.getDay());
-        put("text", joke.getText());
-        if (joke.getDesc() != null) {
-          put("desc", joke.getDesc());
-        }
-      }
-    };
+    return joke.toMap();
   }
 
   private static Joke dataToJoke(JSONObject data) throws BadRequestException {
@@ -243,10 +208,17 @@ public class JokeHandler implements HttpHandler {
     } catch (JSONException e) {
       // desc is optional, so ignore this
     }
+    if ("".equals(desc)) {
+      desc = null;
+    }
+
     try {
       text = data.getString("text");
     } catch (JSONException e) {
-      throw new BadRequestException("request is missing required field(s)", e);
+      throw new BadRequestException("request is missing required text field", e);
+    }
+    if (text == null || "".equals(text)) {
+      throw new BadRequestException("request is missing required text field");
     }
     return new Joke(day, text, desc);
   }

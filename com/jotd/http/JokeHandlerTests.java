@@ -1,23 +1,13 @@
 package com.jotd.http;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.sql.Date;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.junit.Test;
-import org.slf4j.LoggerFactory;
 
 import com.jotd.data.IJokes;
 import com.jotd.exceptions.DuplicateKeyException;
@@ -27,6 +17,9 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
+
+public class JokeHandlerTests {
+}
 
 abstract class MockJokes implements IJokes {
 
@@ -48,101 +41,6 @@ abstract class MockJokes implements IJokes {
   @Override
   public Joke deleteJoke(Date d) throws SQLException, NotFoundException {
     throw new UnsupportedOperationException("Unimplemented method 'deleteJoke'");
-  }
-
-}
-
-public class JokeHandlerTest {
-
-  public static final class GetTest {
-
-    private static class GetTestCase {
-      String input, expected;
-      int sc;
-      IJokes jokes;
-    }
-
-    @Test
-    public static void TestGet() {
-      Map<String, GetTestCase> tcs = new HashMap<String, GetTestCase>() {
-        {
-          put("happy path", new GetTestCase() {
-            {
-              input = "{\"day\":\"2023-09-23\"}";
-              sc = HttpURLConnection.HTTP_OK;
-              jokes = new MockJokes() {
-                @Override
-                public Joke readJoke(Date d) throws SQLException, NotFoundException {
-                  return new Joke(new Date(2023, 9, 23), "happy path", null);
-                }
-              };
-              expected = "{\"day\":\"2023-09-23\",\"text\":\"happy path\"}";
-            }
-          });
-          put("not found", new GetTestCase() {
-            {
-              input = "{\"day\":\"2023-09-23\"}";
-              sc = HttpURLConnection.HTTP_NOT_FOUND;
-              jokes = new MockJokes() {
-                @Override
-                public Joke readJoke(Date d) throws SQLException, NotFoundException {
-                  throw new NotFoundException("not found");
-                }
-              };
-              expected = "{\"error\":\"no joke found\"}";
-            }
-          });
-          put("bad date format", new GetTestCase() {
-            {
-              input = "{\"day\":\"foobar\"}";
-              sc = HttpURLConnection.HTTP_BAD_REQUEST;
-            }
-          });
-          put("missing date", new GetTestCase() {
-            {
-              input = "{}";
-              sc = HttpURLConnection.HTTP_BAD_REQUEST;
-            }
-          });
-          put("missing input", new GetTestCase() {
-            {
-              input = "";
-              sc = HttpURLConnection.HTTP_BAD_REQUEST;
-              expected = "{\"error\":\"couldn't parse json data ''\"}";
-            }
-          });
-          put("internal server error", new GetTestCase() {
-            {
-              input = "{\"day\":\"2023-09-23\"}";
-              sc = HttpURLConnection.HTTP_INTERNAL_ERROR;
-              jokes = new MockJokes() {
-                @Override
-                public Joke readJoke(Date d) throws SQLException, NotFoundException {
-                  throw new SQLException("internal server error");
-                }
-              };
-              expected = "{\"error\":\"couldn't fetch joke\"}";
-            }
-          });
-        };
-      };
-      for (Entry<String, GetTestCase> es : tcs.entrySet()) {
-        // String name = es.getKey();
-        GetTestCase tc = es.getValue();
-
-        JokeHandler handler = new JokeHandler(tc.jokes, LoggerFactory.getLogger(JokeHandlerTest.class));
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        MockHttpExchange xchg = new MockHttpExchange("GET", tc.input, out);
-        handler.handle(xchg);
-
-        assertEquals("status code", tc.sc, xchg.getResponseCode());
-
-        assertEquals("comparing getJoke output", tc.expected, new String(out.toByteArray()));
-
-      }
-    }
-
   }
 
 }

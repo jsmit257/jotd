@@ -2,6 +2,7 @@ package com.jotd.types;
 
 import java.sql.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.json.JSONObject;
 
@@ -84,14 +85,20 @@ public class Joke {
     return toJSONString();
   }
 
-  public String toJSONString() {
-    return JSONObject.valueToString(new HashMap<String, Object>() {
+  public Map<String, Object> toMap() {
+    return new HashMap<String, Object>() {
       {
         put("id", id);
         put("day", day);
         put("text", text);
-        put("description", desc);
+        if (desc != null) {
+          put("desc", desc);
+        }
       }
-    });
+    };
+  }
+
+  public String toJSONString() {
+    return JSONObject.valueToString(toMap());
   }
 }

@@ -1,4 +1,4 @@
-JAVA_LIBS=lib/javaee-api-8.0.jar:lib/hamcrest-core-2.2.jar:lib/json-20230618.jar:lib/junit-4.13.2.jar:lib/postgresql-42.6.0.jar:lib/slf4j-api-2.0.7.jar:lib/slf4j-simple-2.0.7.jar:lib/sqlite-jdbc-3.43.0.0.jar
+JAVA_LIBS=lib/hamcrest-2.2.jar:lib/javaee-api-8.0.jar:lib/json-20230618.jar:lib/junit-4.13.2.jar:lib/postgresql-42.6.0.jar:lib/slf4j-api-2.0.7.jar:lib/slf4j-simple-2.0.7.jar:lib/sqlite-jdbc-3.43.0.0.jar
 
 .PHONY: initdb
 initdb:
@@ -13,7 +13,8 @@ build: clean
 	javac -Xlint:deprecation -cp $(JAVA_LIBS) `find . -name '*.java'`
 
 .PHONY: unit
-unit: build
+unit: package
+	java -cp lib/jotd.jar:$(JAVA_LIBS) org.junit.runner.JUnitCore 'com.jotd.http.GetTests'
 
 .PHONY: package
 package: build
