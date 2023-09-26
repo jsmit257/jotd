@@ -18,8 +18,8 @@ Run `make run-local` to start the server; Default settings bind to localhost:808
 - starts the server as a local process
 
 #### Docker
-Run `fun-docker` to start the postgres service and the jotd server; Default host and port are the same as for [standalone](#standalone) and can be modified in (./docker-compose.yml); This target:
-- stops any existing services in this `docker-compose.yml`
+Run `fun-docker` to start the postgres service and the jotd server; Default host and port are the same as for [standalone](#standalone) and can be modified in [docker-compose](./docker-compose.yml); This target:
+- stops any existing services in this [docker-compose](docker-compose.yml)
 - starts a postgres service called `jotd-db`
 - applies the jotd schema to the postgres instance (after a pause)
 - starts the jotd server in a `jotd-api` service
@@ -69,4 +69,3 @@ As mentioned above, [tests](./bin/tests) is the only current test; It runs at th
 ### TODO
 - finish the web layer; keep it simple
 - add proper unit testing
-l

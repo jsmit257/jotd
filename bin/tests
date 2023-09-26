@@ -3,57 +3,46 @@
 echo -e "\n>>> test the seed value, should have a joke (returns 200):\n" >&2
 curl -i -XGET http://localhost:8080/jotd -d '{"day":"2023-09-23"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> test the missing value (returns 404):\n" >&2
 curl -i -XGET http://localhost:8080/jotd -d '{"day":"2023-09-24"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> add a new joke for an empty day, should succeed (returns 201):\n" >&2
 curl -i -XPOST http://localhost:8080/jotd -d '{"day":"2023-09-25","text":"not funny"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> add a joke for a day that already has a joke (returns 400):\n" >&2
 curl -i -XPOST http://localhost:8080/jotd -d '{"day":"2023-09-23","text":"duplicate key"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> add a joke with missing fields (returns 400):\n" >&2
 curl -i -XPOST http://localhost:8080/jotd -d '{"text":"no day field"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> edit a joke, including changing day (returns 204):\n" >&2
 curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-24", "text": "now is funny", "old-day": "2023-09-25"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> edit a joke's day for a day that already has a different joke (returns 400):\n" >&2
 curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-23", "text": "now is funny", "old-day": "2023-09-24"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> edit a joke without changing day (returns 204):\n" >&2
 curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-24", "text": "now is very funny", "old-day": "2023-09-24"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> edit a joke with missing fields (returns 400):\n" >&2
 curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-23", "text": "now is funny"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> edit a missing joke (no joke for the day being edited) (returns 404):\n" >&2
 curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-20", "text": "now is funny", "old-day": "2023-09-25"}'
 echo
-read -p"press a key..."
 
-echo -e "\n>>> delete a joke (returns 200):\n" >&2
+echo -e "\n>>> delete a joke (returns 204):\n" >&2
 curl -i -XDELETE http://localhost:8080/jotd -d '{"day": "2023-09-24"}'
 echo
-read -p"press a key..."
 
 echo -e "\n>>> delete a missing joke (returns 404):\n" >&2
 curl -i -XDELETE http://localhost:8080/jotd -d '{"day": "2023-09-30"}'

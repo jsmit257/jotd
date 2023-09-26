@@ -52,15 +52,18 @@ public class JokeHandler implements HttpHandler {
         .lines()
         .collect(Collectors.joining("\n"));
 
-    JSONObject reqData;
+    String method = xchg.getRequestMethod().toLowerCase();
+
+    JSONObject reqData = null;
     try {
       reqData = new JSONObject(reqText);
-    } catch (JSONException e) {
-      return;
+    } catch (JSONException json) {
+      method = "fail";
+      log.error("couldn't parse json data", json);
     }
 
     try {
-      switch (xchg.getRequestMethod().toLowerCase()) {
+      switch (method) {
         case "get":
           result.putAll(getJoke(reqData));
           break;
@@ -75,6 +78,9 @@ public class JokeHandler implements HttpHandler {
         case "delete":
           deleteJoke(reqData);
           sc = HttpURLConnection.HTTP_NO_CONTENT;
+          break;
+        case "fail":
+          result.put("error", String.format("couldn't parse json data '%s'", reqText));
           break;
         default:
           result.put("error", "invalid method");
@@ -109,6 +115,7 @@ public class JokeHandler implements HttpHandler {
     OutputStream response = xchg.getResponseBody();
     try {
       xchg.sendResponseHeaders(sc, contentLength);
+      xchg.getResponseHeaders().add("Content-Type", "application/json");
 
       response.write(b);
       response.flush();
