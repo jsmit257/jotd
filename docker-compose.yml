@@ -36,7 +36,9 @@ services:
     image: eclipse-temurin:latest
     restart: no
     hostname: *server-host
-    volumes: [ ./lib:/jotd ]
+    volumes:
+      - ./lib:/jotd
+      - ./www:/www
     ports:
       - 8080:8080
     environment:

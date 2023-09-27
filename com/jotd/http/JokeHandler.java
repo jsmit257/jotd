@@ -55,17 +55,19 @@ public class JokeHandler implements HttpHandler {
     String method = xchg.getRequestMethod().toLowerCase();
 
     JSONObject reqData = null;
-    try {
-      reqData = new JSONObject(reqText);
-    } catch (JSONException json) {
-      method = "fail";
-      log.error("couldn't parse json data", json);
+    if (!"get".equals(method)) {
+      try {
+        reqData = new JSONObject(reqText);
+      } catch (JSONException json) {
+        method = "fail";
+        log.error("couldn't parse json data", json);
+      }
     }
 
     try {
       switch (method) {
         case "get":
-          result.putAll(getJoke(reqData));
+          result.putAll(getJoke(getDayParam(xchg.getRequestURI().getQuery())));
           break;
         case "post":
           result.putAll(postJoke(reqData));
@@ -134,9 +136,8 @@ public class JokeHandler implements HttpHandler {
 
   }
 
-  public Map<String, Object> getJoke(JSONObject data)
+  public Map<String, Object> getJoke(Date day)
       throws NotFoundException, InternalErrorException, BadRequestException {
-    Date day = JokeHandler.getDay(data);
     Joke joke;
 
     try {
@@ -221,6 +222,28 @@ public class JokeHandler implements HttpHandler {
       throw new BadRequestException("request is missing required text field");
     }
     return new Joke(day, text, desc);
+  }
+
+  private Date getDayParam(String query) throws BadRequestException {
+    if (query == null) {
+      throw new BadRequestException("query string must include a 'day' parameter");
+    }
+    for (String param : query.split("&")) {
+      String[] nvp = param.split("=", 2);
+      if (nvp.length == 1) {
+        log.info("param isn't NVP: {}", param);
+        continue;
+      }
+      if ("day".equals(nvp[0])) {
+        log.info("found a day: {}", param);
+        try {
+          return new Date(new SimpleDateFormat("yyyy-MM-dd").parse(nvp[1]).getTime());
+        } catch (Exception e) {
+          log.error("couldn't parse 'day' field", e);
+        }
+      }
+    }
+    throw new BadRequestException("query string must include a properly formed 'day' parameter");
   }
 
   private static Date getDay(JSONObject data) throws BadRequestException {

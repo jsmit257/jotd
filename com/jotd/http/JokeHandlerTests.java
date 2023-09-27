@@ -1,13 +1,24 @@
 package com.jotd.http;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.sql.Date;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.jotd.data.IJokes;
 import com.jotd.exceptions.DuplicateKeyException;
@@ -19,6 +30,135 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
 
 public class JokeHandlerTests {
+
+  class TestCase {
+    String input, expected, params = "";
+    int sc;
+    IJokes mockJokes;
+
+    TestCase(String input, String expected, int sc) {
+      this.input = input;
+      this.expected = expected;
+      this.sc = sc;
+    }
+
+    TestCase(String input, String expected, int sc, IJokes mockJokes) {
+      this(input, expected, sc);
+      this.mockJokes = mockJokes;
+    }
+
+    TestCase(String input, String expected, int sc, IJokes mockJokes, String params) {
+      this(input, expected, sc, mockJokes);
+      this.params = params;
+    }
+
+    TestCase(String input, String expected, int sc, String params) {
+      this(input, expected, sc, (IJokes) null);
+      this.params = params;
+    }
+  }
+
+  @Test
+  public void doGet() {
+    Map<String, TestCase> tcs = new HashMap<String, TestCase>();
+    tcs.put("happy path", new TestCase(
+        "",
+        "{\"day\":\"2023-09-23\",\"id\":0,\"text\":\"happy path\"}",
+        HttpURLConnection.HTTP_OK,
+        new MockJokes() {
+          @Override
+          public Joke readJoke(Date d) throws SQLException, NotFoundException {
+            return new Joke(Date.valueOf("2023-09-23"), "happy path", null);
+          }
+        },
+        "day=2023-09-23"));
+    tcs.put("not found", new TestCase(
+        "",
+        "{\"error\":\"no joke found\"}",
+        HttpURLConnection.HTTP_NOT_FOUND,
+        new MockJokes() {
+          @Override
+          public Joke readJoke(Date d) throws SQLException, NotFoundException {
+            throw new NotFoundException("not found");
+          }
+        },
+        "day=2023-09-23"));
+    tcs.put("bad date format", new TestCase(
+        "",
+        "{\"error\":\"query string must include a properly formed 'day' parameter\"}",
+        HttpURLConnection.HTTP_BAD_REQUEST,
+        "day=foobar"));
+    tcs.put("missing date", new TestCase(
+        "{}",
+        "{\"error\":\"query string must include a properly formed 'day' parameter\"}",
+        HttpURLConnection.HTTP_BAD_REQUEST,
+        "day="));
+    tcs.put("missing input", new TestCase(
+        "",
+        "{\"error\":\"query string must include a properly formed 'day' parameter\"}",
+        HttpURLConnection.HTTP_BAD_REQUEST));
+    tcs.put("internal server error", new TestCase(
+        "",
+        "{\"error\":\"couldn't fetch joke\"}",
+        HttpURLConnection.HTTP_INTERNAL_ERROR,
+        new MockJokes() {
+          @Override
+          public Joke readJoke(Date d) throws SQLException, NotFoundException {
+            throw new SQLException("internal server error");
+          }
+        },
+        "day=2023-09-23"));
+
+    doRequest("GET", tcs);
+  }
+
+  @Test
+  public void doPost() {
+    Map<String, TestCase> tcs = new HashMap<String, TestCase>();
+
+    doRequest("POST", tcs);
+  }
+
+  @Test
+  public void doPatch() {
+    Map<String, TestCase> tcs = new HashMap<String, TestCase>();
+
+    doRequest("PATCH", tcs);
+  }
+
+  @Test
+  public void doDelete() {
+    Map<String, TestCase> tcs = new HashMap<String, TestCase>();
+
+    doRequest("DELETE", tcs);
+  }
+
+  private void doRequest(String method, Map<String, TestCase> tcs) {
+
+    Logger log = LoggerFactory.getLogger(JokeHandlerTests.class);
+
+    for (
+
+    Entry<String, TestCase> es : tcs.entrySet()) {
+      String name = es.getKey();
+      System.err.println(String.format("running test, method: '%s', name: '%s'", method, name));
+      TestCase tc = es.getValue();
+
+      JokeHandler handler = new JokeHandler(tc.mockJokes, log);
+
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      MockHttpExchange xchg = new MockHttpExchange(method, tc.params, tc.input, out);
+      handler.handle(xchg);
+
+      assertEquals(String.format("method: '%s', name: '%s' status code", method, name), tc.sc, xchg.getResponseCode());
+      assertEquals(
+          String.format("%s comparing %s output", name, method),
+          tc.expected,
+          new String(out.toByteArray()));
+
+    }
+  }
+
 }
 
 abstract class MockJokes implements IJokes {
@@ -46,17 +186,19 @@ abstract class MockJokes implements IJokes {
 }
 
 class MockHttpExchange extends HttpExchange {
+  private String params;
   private InputStream requestBody;
   private Headers headers;
   private OutputStream responseBody;
   private String method;
   private int statusCode;
 
-  public MockHttpExchange(String method, String data, OutputStream out) {
+  public MockHttpExchange(String method, String params, String data, OutputStream responseBody) {
     this.method = method;
+    this.params = params;
+    this.responseBody = responseBody;
     requestBody = new ByteArrayInputStream(data.getBytes());
     headers = new Headers();
-    responseBody = out;
   }
 
   @Override
@@ -130,7 +272,11 @@ class MockHttpExchange extends HttpExchange {
 
   @Override
   public URI getRequestURI() {
-    throw new UnsupportedOperationException("Unimplemented method 'getRequestURI'");
+    try {
+      return new URI("snakeoil?" + params);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

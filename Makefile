@@ -14,7 +14,7 @@ build: clean
 
 .PHONY: unit
 unit: package
-	java -cp lib/jotd.jar:$(JAVA_LIBS) org.junit.runner.JUnitCore 'com.jotd.http.GetTests'
+	java -Dorg.slf4j.simpleLogger.defaultLogLevel=error -cp lib/jotd.jar:$(JAVA_LIBS) org.junit.runner.JUnitCore 'com.jotd.http.JokeHandlerTests'
 
 .PHONY: package
 package: build
@@ -31,7 +31,7 @@ deploy:
 run-docker: docker-down package
 	docker-compose -f docker-compose.yml up --detach postgres
 	@echo "give postgres a few seconds to start" >&2
-	sleep 7s
+	sleep 5s
 	docker-compose -f docker-compose.yml up test-serve-jotd
 
 .PHONY: tests

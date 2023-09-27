@@ -1,49 +1,51 @@
 #!/bin/sh
 
+url="http://localhost:8080/jotd"
+
 echo -e "\n>>> test the seed value, should have a joke (returns 200):\n" >&2
-curl -i -XGET http://localhost:8080/jotd -d '{"day":"2023-09-23"}'
+curl -i -XGET "${url}?day=2023-09-23"
 echo
 
 echo -e "\n>>> test the missing value (returns 404):\n" >&2
-curl -i -XGET http://localhost:8080/jotd -d '{"day":"2023-09-24"}'
+curl -i -XGET "${url}?day=2023-09-24"
 echo
 
 echo -e "\n>>> add a new joke for an empty day, should succeed (returns 201):\n" >&2
-curl -i -XPOST http://localhost:8080/jotd -d '{"day":"2023-09-25","text":"not funny"}'
+curl -i -XPOST "${url}" -d '{"day":"2023-09-25","text":"not funny"}'
 echo
 
 echo -e "\n>>> add a joke for a day that already has a joke (returns 400):\n" >&2
-curl -i -XPOST http://localhost:8080/jotd -d '{"day":"2023-09-23","text":"duplicate key"}'
+curl -i -XPOST "${url}" -d '{"day":"2023-09-23","text":"duplicate key"}'
 echo
 
 echo -e "\n>>> add a joke with missing fields (returns 400):\n" >&2
-curl -i -XPOST http://localhost:8080/jotd -d '{"text":"no day field"}'
+curl -i -XPOST "${url}" -d '{"text":"no day field"}'
 echo
 
 echo -e "\n>>> edit a joke, including changing day (returns 204):\n" >&2
-curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-24", "text": "now is funny", "old-day": "2023-09-25"}'
+curl -i -XPATCH "${url}" -d '{"day": "2023-09-24", "text": "now is funny", "old-day": "2023-09-25"}'
 echo
 
 echo -e "\n>>> edit a joke's day for a day that already has a different joke (returns 400):\n" >&2
-curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-23", "text": "now is funny", "old-day": "2023-09-24"}'
+curl -i -XPATCH "${url}" -d '{"day": "2023-09-23", "text": "now is funny", "old-day": "2023-09-24"}'
 echo
 
 echo -e "\n>>> edit a joke without changing day (returns 204):\n" >&2
-curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-24", "text": "now is very funny", "old-day": "2023-09-24"}'
+curl -i -XPATCH "${url}" -d '{"day": "2023-09-24", "text": "now is very funny", "old-day": "2023-09-24"}'
 echo
 
 echo -e "\n>>> edit a joke with missing fields (returns 400):\n" >&2
-curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-23", "text": "now is funny"}'
+curl -i -XPATCH "${url}" -d '{"day": "2023-09-23", "text": "now is funny"}'
 echo
 
 echo -e "\n>>> edit a missing joke (no joke for the day being edited) (returns 404):\n" >&2
-curl -i -XPATCH http://localhost:8080/jotd -d '{"day": "2023-09-20", "text": "now is funny", "old-day": "2023-09-25"}'
+curl -i -XPATCH "${url}" -d '{"day": "2023-09-20", "text": "now is funny", "old-day": "2023-09-25"}'
 echo
 
 echo -e "\n>>> delete a joke (returns 204):\n" >&2
-curl -i -XDELETE http://localhost:8080/jotd -d '{"day": "2023-09-24"}'
+curl -i -XDELETE "${url}" -d '{"day": "2023-09-24"}'
 echo
 
 echo -e "\n>>> delete a missing joke (returns 404):\n" >&2
-curl -i -XDELETE http://localhost:8080/jotd -d '{"day": "2023-09-30"}'
+curl -i -XDELETE "${url}" -d '{"day": "2023-09-30"}'
 echo

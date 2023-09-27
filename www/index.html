@@ -3,8 +3,39 @@
 <head>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
   <script defer type=text/javascript>
-  $('.controls>.control')
-    .onClick(() => {});
+  const endpoint = "http://localhost:8080/jotd"
+  $(
+    $.ajax(endpoint, {
+      "async": true,
+      "contentType": "application/json",
+      "crossDomain": true,
+      "data": {
+        "day": "2023-09-23"
+      },
+      "statusCode": {
+        200: (data, textStatus, jqXHR) => {
+          data = $.parseJSON(data)
+          console.log(jqXHR, textStatus, data);
+          $form = $('form[name=jotd]')
+          $form.find('input[name=id]').val(data.id)
+          $form.find('input[name=day]').val(data.day)
+          $form.find('input[name=old-day]').val(data.day)
+          $form.find('input[name=text]').val(data.text)
+          $form.find('input[name=desc]').val(data.desc)
+        },
+        400: (jqXHR, textStatus, errorThrown) => {
+          console.log(jqXHR, textStatus, errorThrown);
+        },
+        404: (jqXHR, textStatus, errorThrown) => {
+          console.log(jqXHR, textStatus, errorThrown);
+        },
+        500: (jqXHR, textStatus, errorThrown) => {
+          console.log(jqXHR, textStatus, errorThrown);
+        }
+      },
+      "method": "GET"
+    })
+  );
   </script>
 
   <style>
@@ -17,11 +48,11 @@
     .jotd {}
 
     .jotd .id {
-      display: none;
+      /* display: none; */
     }
 
     .jotd .day {
-      display: none;
+      /* display: none; */
     }
 
     .jotd .new-day {}
@@ -44,9 +75,18 @@
     }
 
     .controls>.control {
+      border-style: hidden;
+      border-width: 2px;
       float: left;
+      padding: 1em;
       position: relative;
+      text-align: center;
       width: 30%;
+    }
+
+    .controls>.control:hover {
+      background-color: #ddd;
+      border-style: outset;
     }
   </style>
 

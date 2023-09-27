@@ -24,6 +24,7 @@ public class Server {
 
     HttpServer srv = HttpServer.create(new InetSocketAddress(hostname, port), 0);
     srv.createContext("/" + ctxRoot, new JokeHandler(conn.getJokes(), this.log));
+    srv.createContext("/", new SimpleFileHandler(this.log));
     srv.setExecutor(threadPoolExecutor);
     srv.start();
 
