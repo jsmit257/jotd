@@ -14,7 +14,7 @@ build: clean
 
 .PHONY: unit
 unit: package
-	java -Dorg.slf4j.simpleLogger.defaultLogLevel=error -cp lib/jotd.jar:$(JAVA_LIBS) org.junit.runner.JUnitCore 'com.jotd.http.JokeHandlerTests'
+	java -Dorg.slf4j.simpleLogger.defaultLogLevel=off -cp lib/jotd.jar:$(JAVA_LIBS) org.junit.runner.JUnitCore 'com.jotd.http.JokeHandlerTests'
 
 .PHONY: package
 package: build

@@ -232,6 +232,15 @@ class MockHttpExchange extends HttpExchange {
   }
 
   @Override
+  public URI getRequestURI() {
+    try {
+      return new URI("snakeoil?" + params);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public void close() {
   }
 
@@ -268,15 +277,6 @@ class MockHttpExchange extends HttpExchange {
   @Override
   public Headers getRequestHeaders() {
     throw new UnsupportedOperationException("Unimplemented method 'getRequestHeaders'");
-  }
-
-  @Override
-  public URI getRequestURI() {
-    try {
-      return new URI("snakeoil?" + params);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   @Override

@@ -1,3 +1,4 @@
 **/*.class
 jotd.sqlite
 lib/jotd.jar
+www/js

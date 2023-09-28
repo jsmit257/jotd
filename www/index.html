@@ -2,91 +2,237 @@
 
 <head>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script src="jquery-ui.min.js"></script>
   <script defer type=text/javascript>
-  const endpoint = "http://localhost:8080/jotd"
-  $(
-    $.ajax(endpoint, {
-      "async": true,
-      "contentType": "application/json",
-      "crossDomain": true,
-      "data": {
-        "day": "2023-09-23"
-      },
-      "statusCode": {
-        200: (data, textStatus, jqXHR) => {
-          data = $.parseJSON(data)
-          console.log(jqXHR, textStatus, data);
-          $form = $('form[name=jotd]')
-          $form.find('input[name=id]').val(data.id)
-          $form.find('input[name=day]').val(data.day)
-          $form.find('input[name=old-day]').val(data.day)
-          $form.find('input[name=text]').val(data.text)
-          $form.find('input[name=desc]').val(data.desc)
-        },
-        400: (jqXHR, textStatus, errorThrown) => {
-          console.log(jqXHR, textStatus, errorThrown);
-        },
-        404: (jqXHR, textStatus, errorThrown) => {
-          console.log(jqXHR, textStatus, errorThrown);
-        },
-        500: (jqXHR, textStatus, errorThrown) => {
-          console.log(jqXHR, textStatus, errorThrown);
+  $(($) => {
+    const endpoint = "http://localhost:8080/jotd"
+    var $form = $('form[name=jotd]')
+      .on("update", (evt, data) => {
+        $form.find('input[name=id]').val(data.id)
+        $form.find('input[name=day]').val(data.day)
+        $form.find('input[name=old-day]').val(data.day)
+        $form.find('input[name=text]').val(data.text)
+        $form.find('input[name=description]').val(data.desc)
+      })
+    var $status = $('div.main>div.status')
+      .on("update", (evt, data) => {
+        console.log(evt, data)
+        $status.find('.code').text(data.code)
+        $status.find('.text').text(data.text)
+        $status.find('.description').text(data.err)
+      })
+    var jotd = new function($, $form, $status) {
+      this.doRequest = function(method, data) {
+        console.log(method, data)
+        var statusCodes = {
+          200: (data, textStatus, jqXHR) => {
+            console.log("200", jqXHR, textStatus, data, $form)
+            $status.trigger("update", {
+              code: jqXHR.status,
+              text: jqXHR.statusText,
+              err: JSON.stringify(data)
+            })
+            $form.trigger("update", {
+              id: data.id,
+              day: data.day,
+              text: data.text,
+              desc: data.desc
+            })
+          },
+          201: (data, textStatus, jqXHR) => {
+            console.log("success", textStatus, jqXHR, data)
+            $status.trigger("update", {
+              code: jqXHR.status,
+              text: jqXHR.statusText,
+              err: JSON.stringify(data)
+            })
+          },
+          204: (_, textStatus, jqXHR) => {
+            console.log("success", textStatus, jqXHR, data)
+            $status.trigger("update", {
+              code: jqXHR.status,
+              text: jqXHR.statusText,
+              err: JSON.stringify(data)
+            })
+          },
+          400: (jqXHR, textStatus, errorThrown) => {
+            console.log(jqXHR, textStatus, errorThrown)
+            $status.trigger("update", {
+              code: jqXHR.status,
+              text: jqXHR.statusText,
+              err: jqXHR.responseJSON.error
+            })
+          },
+          404: (jqXHR, textStatus, errorThrown) => {
+            console.log("hello", jqXHR, textStatus, errorThrown, $status.find('.code'))
+            $status.trigger("update", {
+              code: jqXHR.status,
+              text: jqXHR.statusText,
+              err: jqXHR.responseJSON.error
+            })
+            $form.trigger("update", {
+              id: "",
+              day: data.day
+            })
+          },
+          500: (jqXHR, textStatus, errorThrown) => {
+            console.log(jqXHR, textStatus, errorThrown)
+          }
         }
-      },
-      "method": "GET"
+        $.ajax(endpoint, {
+          "async": true,
+          "contentType": "application/json",
+          "data": data,
+          "dataType": "json",
+          "statusCode": statusCodes,
+          "method": method,
+          "success": () => {
+            $('.main>.status').addClass("success")
+          },
+          "error": () => {
+            $('.main>.status').removeClass("success")
+          }
+        })
+      }
+      
+      this.formToData = function($form) {
+        var result = {
+          "id": $form.find("input[name=id]").val(),
+          "day": $form.find("input[name=day]").val(),
+          "old-day": $form.find("input[name=old-day]").val(),
+          "text": $form.find("input[name=text]").val()
+        }
+        var desc = $form.find("input[name=description]").val()
+        if (desc) {
+          result.desc = desc
+        }
+        return JSON.stringify(result)
+      }
+    }($, $form, $status)
+
+    $form
+      .find('.calendar>div>input[name=old-day]')
+      .datepicker({
+        "dateFormat": "yy-mm-dd",
+        "defaultDate": new Date()
+      })
+      .change(($this) => {
+        jotd.doRequest("GET", {
+          "day": $this.currentTarget.value
+        })
+      });
+
+    $form
+      .find('div>input[name=day]')
+      .datepicker({
+        "dateFormat": "yy-mm-dd"
+      })
+
+    $('.controls>.control').click(($this) => {
+      jotd.doRequest($this.currentTarget.id, jotd.formToData($('form[name=jotd]')))
     })
-  );
+
+    $form.find('input[name=old-day]').val("2023-09-23")
+    jotd.doRequest("GET", {
+      "day": "2023-09-23"
+    })
+
+  });
   </script>
 
+  <link href="jquery-ui.min.css" rel="stylesheet">
   <style>
     .main {
+      background-color: #eee;
+      padding: 1em;
+    }
+
+    .main>div,
+    .main>form {
+      float: left;
+      position: relative;
+      width: 90%;
+    }
+
+    .main>.info {
+      background-color: #eee;
+      font-size: larger;
+      margin-bottom: 3em;
       margin-left: auto;
       margin-right: auto;
-      width: 80%;
+      margin-top: 3em;
+      padding: 1em;
     }
 
-    .jotd {}
-
-    .jotd .id {
-      /* display: none; */
+    .main>.info dl {
+      padding-left: 5%;
     }
 
-    .jotd .day {
-      /* display: none; */
+    .jotd {
+      background-color: #eee;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .jotd .new-day {}
-
-    .jotd .text {
-      height: 10em;
-      width: 30em;
+    .hidden {
+      display: none;
     }
 
+    .jotd .text,
     .jotd .desc {
       height: 10em;
-      width: 30em;
+    }
+
+    .jotd .text:empty {
+      content: "(not found)";
     }
 
     .jotd>.calendar {
-      background-color: blue;
       float: left;
-      height: 200px;
-      width: 30%;
+      position: relative;
+      width: 33%;
+    }
+
+    .jotd>.fields {
+      float: left;
+    }
+
+    .fields input {
+      float: right;
+      width: 30em;
+    }
+
+    .controls {
+      background-color: #eef;
     }
 
     .controls>.control {
       border-style: hidden;
       border-width: 2px;
-      float: left;
+      float: right;
       padding: 1em;
       position: relative;
       text-align: center;
-      width: 30%;
     }
 
     .controls>.control:hover {
-      background-color: #ddd;
+      background-color: #eee;
       border-style: outset;
+    }
+
+    .status {
+      background-color: #fee;
+      padding-bottom: .5em;
+      padding-top: .5em;
+    }
+
+    .success {
+      background-color: #efe;
+    }
+
+    .status>div {
+      float: left;
+      padding-right: 2em;
     }
   </style>
 
@@ -94,30 +240,77 @@
 
 <body>
   <div id="main" class="main">
+    <div class="info">
+      <p>
+        This is a simple UAT harness for Joke Of The Day service. It's very not-sexy and doesn't know the meaning of
+        sanity checking; that's all on the service. The basics follow:
+      </p>
+      <dl>
+        <dt>get</dt>
+        <dd>
+          Selecting a date on the calendar sends a GET request to the service for that day
+        </dd>
+        <dt>update</dt>
+        <dd>
+          Sends the current form fields to the service as a PATCH request ("id" field is ignored); repositions the
+          calendar to the new day
+        </dd>
+        <dt>delete</dt>
+        <dd>
+          Sends the current form fields to the service as a DELETE request (only "day" field is used); repositions the
+          calendar to the new day
+        </dd>
+        <dt>new</dt>
+        <dd>
+          Sends the current form fields to the service as a POST request ("old-day", "id" fields are ignored);
+          repositions the calendar to the new day
+        </dd>
+      </dl>
+      <p>
+        Any errors are reported in the alerts section below the form and controls, inputs are not reset to any
+        particular
+        value, the location of the error isn't highlighted in the input label, etc, you'll have to figure out why the
+        service didn't like the request and either fix it or report an issue.
+      </p>
+      <p>
+        It's good to have an inspector open while you navigate; check out the console and maybe network.
+      </p>
+    </div>
     <form name="jotd" class="jotd">
-      <div class="calendar"></div>
-      <div class="line-item">
-        <input name="id" class="id">
+      <div class="calendar">
+        <div class="line-item">
+          <div>Use this input to request a joke for another day, or to seed a new joke</div>
+          <input name="old-day" class="day">
+        </div>
       </div>
-      <div class="line-item">
-        <input name="day" class="day">
-      </div>
-      <div class="line-item">
-        <input name="old-day" class="day">
-      </div>
-      <div class="line-item">
-        <input name="text" class="text">
-      </div>
-      <div class="line-item">
-        <input name="description" class="desc">
+      <div class="fields">
+        <div class="hidden line-item">
+          <input name="id" class="id">
+        </div>
+        <div class="line-item">
+          <div>The day for this joke</div>
+          <input name="day" class="day">
+        </div>
+        <div class="line-item">
+          <div>The text of this joke</div>
+          <input name="text" class="text">
+        </div>
+        <div class="line-item">
+          <div>Optional description for this joke</div>
+          <input name="description" class="desc">
+        </div>
       </div>
     </form>
     <div class="controls">
-      <div class="control edit" id="patch">edit</div>
+      <div class="control edit" id="patch">update</div>
       <div class="control delete" id="delete">delete</div>
       <div class="control add" id="post">new</div>
     </div>
-    <div class="status"></div>
+    <div class="status">
+      <div class="code"></div>
+      <div class="text"></div>
+      <div class="description"></div>
+    </div>
   </div>
 </body>
 
