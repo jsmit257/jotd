@@ -1,9 +1,10 @@
 ## Joke Of The Day
-A simple service to read and update a Joke Of The Day.  Currently runs as standalone on a workstation with `make`, `sqlite3` and any +Java6 version.
+A simple service to read and update a Joke Of The Day.  Currently runs as standalone on a workstation with `make`, `sqlite3` and any +Java6 version, or in docker using a postgres backend.
 
 #### Requirments (standalone and docker)
 - make
 - sqlite3
+- curll
 
 #### Optional (docker only)
 - docker
@@ -25,12 +26,12 @@ Run `fun-docker` to start the postgres service and the jotd server; Default host
 - starts the jotd server in a `jotd-api` service
 
 ### Using
-`curl` is the current method for accessing the service; A web UI is in the works, but needs some work still; Comprehensive examples of using the service can be found in [tests](./bin/tests); One weirdness is that every request requires a body - perhaps requiring `day` as a URL parameter for each request would've been more normal, but the code stays cleaner this way
+`curl` is one method for accessing the service and the basis of our poor-man's system testing; `jq` could do a great job comparing outputs, except that `curl` dumps the status code to stdout in non-JSON format that makes `jq` gak; 
 
 Some simple examples from [tests](./bin/tests) follow:
 - fetch a joke for the given day
 ```sh
-curl -i -XGET http://localhost:8080/jotd -d '{"day":"2023-09-23"}'
+curl -i -XGET "http://localhost:8080/jotd?day=2023-09-23"
 ```
 - create a joke
 ```sh
@@ -52,20 +53,23 @@ The general body for a request/response looks like this:
 {
   "id": 0, // (optional) unused
   "day": "1970-01-01", // (required) date in yyyy-MM-dd format
+  "old-day": "1970-01-01", // only used for PATCH, never returned from the serverl
   "text": "the text of the joke", // (required)
   "desc": "optional description" // (optional)
 }
 ```
-Fields marked as (optional) are optional for input; All fields are returned in responses, except `desc` if it's null (empty strings are included); One notable exception is that the `id` field is the default-long value (0) for inserts, since we didn't want to go back to the db for one more `select` after `insert`; May be better just to leave this field out completely
+Fields marked as (optional) are optional for input; All fields are returned in responses, except `desc` if it's null (empty strings are included), and `old-day` which is input-only; One notable exception is that the `id` field is the default-long value (0) for inserts, since we didn't want to go back to the db for one more `select` after `insert`; May be better just to leave this field out completely
+
+There's also a UI available for UAT at localhost:8080/index.html.  It's not pretty to look at except that it's complete and very simple under the covers. It has push-button convenience and clearly displays the data and response
 
 ### Testing
-As mentioned above, [tests](./bin/tests) is the only current test; It runs at the system level and can exercise all the errors except `SQLException`; And it lacks proper automation, so a human has to review the expected v. actual results
+There is unit testing in the [http package](./com/jotd/http/JokeHandlerTests.java). They only cover GET requests, but they demonstrate the pattern we'd use for all methods if this were a customer-facing app, plus we've done enough system and UAT during development that all possible code-paths should be covered. Data package was hard to unit-test because of some massive `java.sql.*` things that needed mocking/faking. There's certainly a good framework out there somewhere
+
+As mentioned above, [tests](./bin/tests) runs at the system level and can exercise all the errors except `SQLException`; And it lacks proper automation, so a human has to review the expected v. actual results. Maybe a day and I'd have a thumbs-up/-down kind of test written in *something*
+
+Finally, you can put on your quality assurance hat and fiddle with the web front-end. It does all the CRUD in a simple, more-or-less intuitive way
 
 #### Testing-TODO:
-- use `IJokes` to create mocks for unit tests in `http` package
 - figure out how to mock `Connection`, `PreparedStatement`, etc to create unit tests for the data layer
 - create a properly automated system test with clear results
-
-### TODO
-- finish the web layer; keep it simple
-- add proper unit testing
+l
