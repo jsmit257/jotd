@@ -4,7 +4,7 @@ A simple service to read and update a Joke Of The Day.  Currently runs as standa
 #### Requirments (standalone and docker)
 - make
 - sqlite3
-- curll
+- curl
 
 #### Optional (docker only)
 - docker
@@ -53,7 +53,7 @@ The general body for a request/response looks like this:
 {
   "id": 0, // (optional) unused
   "day": "1970-01-01", // (required) date in yyyy-MM-dd format
-  "old-day": "1970-01-01", // only used for PATCH, never returned from the serverl
+  "old-day": "1970-01-01", // only used for PATCH, never returned from the server
   "text": "the text of the joke", // (required)
   "desc": "optional description" // (optional)
 }
