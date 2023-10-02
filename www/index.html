@@ -22,63 +22,87 @@
         $status.find('.description').text(data.err)
       })
     var jotd = new function($, $form, $status) {
-      this.doRequest = function(method, data) {
-        console.log(method, data)
-        var statusCodes = {
-          200: (data, textStatus, jqXHR) => {
-            console.log("200", jqXHR, textStatus, data, $form)
-            $status.trigger("update", {
-              code: jqXHR.status,
-              text: jqXHR.statusText,
-              err: JSON.stringify(data)
-            })
-            $form.trigger("update", {
-              id: data.id,
-              day: data.day,
-              text: data.text,
-              desc: data.desc
-            })
-          },
-          201: (data, textStatus, jqXHR) => {
-            console.log("success", textStatus, jqXHR, data)
-            $status.trigger("update", {
-              code: jqXHR.status,
-              text: jqXHR.statusText,
-              err: JSON.stringify(data)
-            })
-          },
-          204: (_, textStatus, jqXHR) => {
-            console.log("success", textStatus, jqXHR, data)
-            $status.trigger("update", {
-              code: jqXHR.status,
-              text: jqXHR.statusText,
-              err: JSON.stringify(data)
-            })
-          },
-          400: (jqXHR, textStatus, errorThrown) => {
-            console.log(jqXHR, textStatus, errorThrown)
-            $status.trigger("update", {
-              code: jqXHR.status,
-              text: jqXHR.statusText,
-              err: jqXHR.responseJSON.error
-            })
-          },
-          404: (jqXHR, textStatus, errorThrown) => {
-            console.log("hello", jqXHR, textStatus, errorThrown, $status.find('.code'))
-            $status.trigger("update", {
-              code: jqXHR.status,
-              text: jqXHR.statusText,
-              err: jqXHR.responseJSON.error
-            })
-            $form.trigger("update", {
-              id: "",
-              day: data.day
-            })
-          },
-          500: (jqXHR, textStatus, errorThrown) => {
-            console.log(jqXHR, textStatus, errorThrown)
-          }
+
+      var $oldDay = $form
+        .find('.calendar>div>input[name=old-day]')
+        .datepicker({
+          "dateFormat": "yy-mm-dd",
+          "defaultDate": new Date()
+        })
+        .change(($this) => {
+          jotd.doRequest("GET", {
+            "day": $this.currentTarget.value
+          })
+        });
+
+      var $day = $form
+        .find('div>input[name=day]')
+        .datepicker({
+          "dateFormat": "yy-mm-dd"
+        })
+
+      var statusCodes = {
+        200: (data, textStatus, jqXHR) => {
+          console.log("200", jqXHR, textStatus, data, $form)
+          $status.trigger("update", {
+            code: jqXHR.status,
+            text: jqXHR.statusText,
+            err: JSON.stringify(data)
+          })
+          $form.trigger("update", {
+            id: data.id,
+            day: data.day,
+            text: data.text,
+            desc: data.desc
+          })
+        },
+        201: (data, textStatus, jqXHR) => {
+          console.log("success", textStatus, jqXHR, data)
+          $status.trigger("update", {
+            code: jqXHR.status,
+            text: jqXHR.statusText,
+            err: JSON.stringify(data)
+          })
+        },
+        204: (data, textStatus, jqXHR) => {
+          console.log("success", textStatus, jqXHR, data)
+          $status.trigger("update", {
+            code: jqXHR.status,
+            text: jqXHR.statusText,
+            err: JSON.stringify(data)
+          })
+        },
+        400: (jqXHR, textStatus, errorThrown) => {
+          console.log(jqXHR, textStatus, errorThrown)
+          $status.trigger("update", {
+            code: jqXHR.status,
+            text: jqXHR.statusText,
+            err: jqXHR.responseJSON.error
+          })
+        },
+        404: (jqXHR, textStatus, errorThrown) => {
+          console.log("hello", jqXHR, textStatus, errorThrown, $status.find('.code'))
+          $status.trigger("update", {
+            code: jqXHR.status,
+            text: jqXHR.statusText,
+            err: jqXHR.responseJSON.error
+          })
+          $form.trigger("update", {
+            id: "",
+            // day: data.day
+          })
+        },
+        500: (jqXHR, textStatus, errorThrown) => {
+          console.log(jqXHR, textStatus, errorThrown)
+          $status.trigger("update", {
+            code: jqXHR.status,
+            text: jqXHR.statusText,
+            err: jqXHR.responseJSON.error
+          })
         }
+      }
+
+      this.doRequest = function(method, data) {
         $.ajax(endpoint, {
           "async": true,
           "contentType": "application/json",
@@ -110,29 +134,10 @@
       }
     }($, $form, $status)
 
-    $form
-      .find('.calendar>div>input[name=old-day]')
-      .datepicker({
-        "dateFormat": "yy-mm-dd",
-        "defaultDate": new Date()
-      })
-      .change(($this) => {
-        jotd.doRequest("GET", {
-          "day": $this.currentTarget.value
-        })
-      });
-
-    $form
-      .find('div>input[name=day]')
-      .datepicker({
-        "dateFormat": "yy-mm-dd"
-      })
-
     $('.controls>.control').click(($this) => {
-      jotd.doRequest($this.currentTarget.id, jotd.formToData($('form[name=jotd]')))
+      jotd.doRequest($this.currentTarget.id, jotd.formToData($form))
     })
 
-    $form.find('input[name=old-day]').val("2023-09-23")
     jotd.doRequest("GET", {
       "day": "2023-09-23"
     })
